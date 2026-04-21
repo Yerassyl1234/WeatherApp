@@ -5,8 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
-import com.example.core.ui.theme.PrimaryShapes
-import com.example.core.ui.theme.PrimaryTypography
+import androidx.compose.runtime.CompositionLocalProvider
 
 private val LightColors = lightColorScheme(
     primary = PrimaryColors.SkyBlueDark,
@@ -35,10 +34,14 @@ fun WeatherAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
-    MaterialTheme(
-        colorScheme = if (darkTheme) DarkColors else LightColors,
-        typography = PrimaryTypography,
-        shapes = PrimaryShapes,
-        content = content,
-    )
+    CompositionLocalProvider(
+        LocalSpacing provides Spacing()
+    ) {
+        MaterialTheme(
+            colorScheme = if (darkTheme) DarkColors else LightColors,
+            typography = PrimaryTypography,
+            shapes = PrimaryShapes,
+            content = content,
+        )
+    }
 }

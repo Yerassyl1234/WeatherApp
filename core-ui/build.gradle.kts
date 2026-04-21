@@ -20,6 +20,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
         jvmTarget = "11"
@@ -35,4 +36,5 @@ dependencies {
     api(libs.androidx.material3)
     api(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 }

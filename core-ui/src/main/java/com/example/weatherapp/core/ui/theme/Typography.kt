@@ -1,4 +1,4 @@
-package com.example.core.ui.theme
+package com.example.weatherapp.core.ui.theme
 
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -24,7 +24,7 @@ val PrimaryTypography = Typography(
         fontWeight = FontWeight.SemiBold,
     ),
     titleMedium = TextStyle(
-        fontSize = 44.sp,
+        fontSize = 18.sp,
         fontWeight = FontWeight.Light,
     ),
     bodyLarge = TextStyle(
