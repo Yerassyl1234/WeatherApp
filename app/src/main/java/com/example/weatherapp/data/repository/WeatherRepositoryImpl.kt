@@ -2,18 +2,16 @@ package com.example.weatherapp.data.repository
 
 import com.example.weatherapp.data.common.AppResult
 import com.example.weatherapp.data.common.safeApiCall
-import com.example.weatherapp.data.locale.dao.WeatherDao
-import com.example.weatherapp.data.mapper.toDailyEntities
+import com.example.weatherapp.data.local.dao.WeatherDao
+import com.example.weatherapp.data.mapper.toDailyEntity
 import com.example.weatherapp.data.mapper.toDomain
 import com.example.weatherapp.data.mapper.toEntity
-import com.example.weatherapp.data.mapper.toHourlyEntities
+import com.example.weatherapp.data.mapper.toHourlyEntity
 import com.example.weatherapp.data.remote.api.WeatherApi
 import com.example.weatherapp.domain.model.DailyForecast
 import com.example.weatherapp.domain.model.HourlyForecast
 import com.example.weatherapp.domain.model.Weather
 import com.example.weatherapp.domain.repository.WeatherRepository
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -32,31 +30,33 @@ class WeatherRepositoryImpl(
     override fun observeDailyForecast(): Flow<List<DailyForecast>> =
         dao.observeDailyForecast().map { list -> list.map { it.toDomain() } }
 
-    override suspend fun refreshWeather(lat: Double, lon: Double): AppResult<Unit> =
-        coroutineScope {
-            val weatherDeferred = async { safeApiCall { api.getCurrentWeather(lat, lon, apiKey) } }
-            val forecastDeferred = async { safeApiCall { api.getForecast(lat, lon, apiKey) } }
+    override suspend fun refreshWeather(lat: Double, lon: Double): AppResult<Unit> {
+        val weatherResult = safeApiCall { api.getWeather(lat, lon, apiKey) }
+        val cityResult = safeApiCall { api.getCityName(lat, lon, apiKey = apiKey) }
 
-            val weatherResult = weatherDeferred.await()
-            val forecastResult = forecastDeferred.await()
+        return when (weatherResult) {
+            is AppResult.Error -> weatherResult
 
-            when (weatherResult) {
-                is AppResult.Success -> dao.insertCurrentWeather(weatherResult.data.toEntity())
-                is AppResult.Error -> return@coroutineScope weatherResult
-            }
+            is AppResult.Success -> {
+                val response = weatherResult.data
 
-            when (forecastResult) {
-                is AppResult.Success -> {
-                    dao.updateForecasts(
-                        hourly = forecastResult.data.toHourlyEntities(),
-                        daily = forecastResult.data.toDailyEntities(),
-                        currentTime = System.currentTimeMillis(),
-                    )
+                val cityName = when (cityResult) {
+                    is AppResult.Success -> {
+                        val geo = cityResult.data.firstOrNull()
+                        geo?.localNames?.get("ru") ?: geo?.name ?: ""
+                    }
+                    is AppResult.Error -> ""
                 }
 
-                is AppResult.Error -> return@coroutineScope forecastResult
-            }
+                dao.insertCurrentWeather(response.current.toEntity(cityName))
+                dao.updateForecasts(
+                    hourly = response.hourly.map { it.toHourlyEntity() },
+                    daily = response.daily.map { it.toDailyEntity() },
+                    currentTime = System.currentTimeMillis(),
+                )
 
-            AppResult.Success(Unit)
+                AppResult.Success(Unit)
+            }
         }
+    }
 }

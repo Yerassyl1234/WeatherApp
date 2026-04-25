@@ -1,4 +1,4 @@
-package com.example.weatherapp.data.locale.dao
+package com.example.weatherapp.data.local.dao
 
 
 import androidx.room.Dao
@@ -6,11 +6,10 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
-import com.example.weatherapp.data.locale.entity.DailyForecastEntity
-import com.example.weatherapp.data.locale.entity.HourlyForecastEntity
-import com.example.weatherapp.data.locale.entity.WeatherEntity
+import com.example.weatherapp.data.local.entity.DailyForecastEntity
+import com.example.weatherapp.data.local.entity.HourlyForecastEntity
+import com.example.weatherapp.data.local.entity.WeatherEntity
 import kotlinx.coroutines.flow.Flow
-
 
 @Dao
 interface WeatherDao {

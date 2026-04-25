@@ -1,58 +1,31 @@
 package com.example.weatherapp.di
 
-import android.content.Context
 import androidx.room.Room
 import com.example.weatherapp.BuildConfig
 import com.example.weatherapp.data.common.location.LocationTracker
-import com.example.weatherapp.data.locale.dao.WeatherDao
-import com.example.weatherapp.data.locale.db.WeatherDatabase
+import com.example.weatherapp.data.local.db.WeatherDatabase
 import com.example.weatherapp.data.remote.RetrofitClient
-import com.example.weatherapp.data.remote.api.WeatherApi
 import com.example.weatherapp.data.repository.WeatherRepositoryImpl
 import com.example.weatherapp.domain.repository.WeatherRepository
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
-import javax.inject.Singleton
+import com.example.weatherapp.presentation.screens.main.MainViewModel
+import org.koin.core.module.dsl.viewModel
+import org.koin.dsl.module
 
-@Module
-@InstallIn(SingletonComponent::class)
-object AppModule {
+val appModule = module {
 
-    @Provides
-    @Singleton
-    fun provideWeatherDatabase(@ApplicationContext context: Context): WeatherDatabase =
+    single {
         Room.databaseBuilder(
-            context,
+            get(),
             WeatherDatabase::class.java,
-            "weather_db",
-        ).build()
+            "weather_db"
+        ).fallbackToDestructiveMigration().build()
+    }
+    single { get<WeatherDatabase>().weatherDao() }
+    single { RetrofitClient.weatherApi }
+    single { BuildConfig.WEATHER_API_KEY }
+    single { LocationTracker(get()) }
+    single<WeatherRepository> { WeatherRepositoryImpl(get(), get(), get()) }
 
-    @Provides
-    @Singleton
-    fun provideWeatherDao(db: WeatherDatabase): WeatherDao =
-        db.weatherDao()
-
-    @Provides
-    @Singleton
-    fun provideWeatherApi(): WeatherApi =
-        RetrofitClient.weatherApi
-
-    @Provides
-    @Singleton
-    fun provideLocationTracker(@ApplicationContext context: Context): LocationTracker =
-        LocationTracker(context)
-
-    @Provides
-    @Singleton
-    fun provideWeatherRepository(
-        api: WeatherApi,
-        dao: WeatherDao,
-    ): WeatherRepository = WeatherRepositoryImpl(
-        api = api,
-        dao = dao,
-        apiKey = BuildConfig.WEATHER_API_KEY,
-    )
+    viewModel { MainViewModel(get(), get()) }
 }
+

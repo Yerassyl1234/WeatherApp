@@ -8,25 +8,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 
 private val LightColors = lightColorScheme(
-    primary = PrimaryColors.SkyBlueDark,
-    onPrimary = PrimaryColors.White,
-    secondary = PrimaryColors.CardBlue,
-    onSecondary = PrimaryColors.White,
-    background = PrimaryColors.SkyBlueLight,
-    onBackground = PrimaryColors.White,
-    surface = PrimaryColors.CardBlue,
-    onSurface = PrimaryColors.White,
+    primary = WeatherPalette.SkyBlueDark,
+    onPrimary = WeatherPalette.White,
+    secondary = WeatherPalette.CardBlue,
+    onSecondary = WeatherPalette.White,
+    background = WeatherPalette.SkyBlueLight,
+    onBackground = WeatherPalette.White,
+    surface = WeatherPalette.CardBlue,
+    onSurface = WeatherPalette.White,
 )
 
 private val DarkColors = darkColorScheme(
-    primary = PrimaryColors.CardBlueDark,
-    onPrimary = PrimaryColors.White,
-    secondary = PrimaryColors.CardBlue,
-    onSecondary = PrimaryColors.White,
-    background = PrimaryColors.CardBlueDark,
-    onBackground = PrimaryColors.White,
-    surface = PrimaryColors.CardBlue,
-    onSurface = PrimaryColors.White,
+    primary = WeatherPalette.CardBlueDark,
+    onPrimary = WeatherPalette.White,
+    secondary = WeatherPalette.CardBlue,
+    onSecondary = WeatherPalette.White,
+    background = WeatherPalette.CardBlueDark,
+    onBackground = WeatherPalette.White,
+    surface = WeatherPalette.CardBlue,
+    onSurface = WeatherPalette.White,
 )
 
 @Composable
@@ -34,11 +34,16 @@ fun WeatherAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit,
 ) {
+    val weatherColors = if (darkTheme) DarkWeatherColors else LightWeatherColors
+    val colorScheme = if (darkTheme) DarkColors else LightColors
+
     CompositionLocalProvider(
-        LocalSpacing provides Spacing()
-    ) {
+        LocalSpacing provides Spacing(),
+        LocalWeatherColors provides weatherColors,
+    )
+    {
         MaterialTheme(
-            colorScheme = if (darkTheme) DarkColors else LightColors,
+            colorScheme = colorScheme,
             typography = PrimaryTypography,
             shapes = PrimaryShapes,
             content = content,

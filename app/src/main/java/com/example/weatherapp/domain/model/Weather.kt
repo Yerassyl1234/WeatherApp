@@ -18,4 +18,6 @@ data class Weather(
     val tempMax: Double,
     val visibility: Int,
     val updatedAt: Long,
+    val uvIndex: Double,
+    val dewPoint: Double,
 )

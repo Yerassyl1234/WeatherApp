@@ -1,73 +1,50 @@
 <resources>
-    <string name="app_name">Погода</string>
-    <string name="weather_title">Погода</string>
-
-    <string name="location_work">Работа</string>
-    <string name="location_current">Текущее место</string>
-    <string name="condition_mostly_sunny">В основном солнечно</string>
-    <string name="condition_mostly_cloudy">В основном облачно</string>
-    <string name="max_min_temp">Макс.: %1$s, мин.: %2$s</string>
-    <string name="wind_gusts_info">Порывы ветра до %1$d км/ч. Солнечно до конца дня.</string>
-
+    <string name="core_ui_error_no_internet">Нет подключения к интернету</string>
+    <string name="core_ui_error_timeout">Превышено время ожидания</string>
+    <string name="core_ui_error_gps_disabled">GPS выключен</string>
+    <string name="core_ui_error_location_denied">Нет доступа к геолокации</string>
+    <string name="core_ui_error_location_disabled">Не удалось получить местоположение</string>
+    <string name="core_ui_error_unknown">Что-то пошло не так</string>
+    <string name="core_ui_error_city_not_found">Город не найден</string>
+    <string name="core_ui_error_api_key">Ошибка авторизации. Проверьте API ключ</string>
+    <string name="core_ui_error_too_many_requests">Превышен лимит запросов. Попробуйте позже</string>
+    <string name="core_ui_error_server_down">Сервер временно недоступен</string>
+    <string name="core_ui_error_server_with_code">Ошибка сервера: %1$d</string>
+    <string name="core_ui_retry">Повторить</string>
+    <string name="core_ui_temperature_format">%1$d°</string>
+    <string name="core_ui_temp_min_max">Макс.: %1$d°, Мин.: %2$d°</string>
+    <string name="summary_wind_and_description">Порывы ветра до %1$d км/ч. %2$s.</string>
+    <string name="icon_url">https://openweathermap.org/img/wn/%1$s@2x.png</string>
+    <string name="core_ui_daily_forecast_title">Прогноз на 8 дней</string>
     <string name="now">Сейчас</string>
-    <string name="sunset">Закат</string>
-    <string name="sunrise">Восход</string>
-
-    <string name="forecast_10_days">ПРОГНОЗ НА 10 ДНЕЙ</string>
+    <string name="core_ui_ok">ОК</string>
     <string name="today">Сегодня</string>
-    <string name="day_monday">Пн</string>
-    <string name="day_tuesday">Вт</string>
-    <string name="day_wednesday">Ср</string>
-    <string name="day_thursday">Чт</string>
-    <string name="day_friday">Пт</string>
-    <string name="day_saturday">Сб</string>
-    <string name="day_sunday">Вс</string>
-
-    <string name="section_averages">В СРЕДНЕМ</string>
-    <string name="averages_description">На %1$s° %2$s среднегодового максимума</string>
-    <string name="above_average">выше</string>
-    <string name="below_average">ниже</string>
-
-    <string name="section_feels_like">ОЩУЩАЕТСЯ</string>
-    <string name="feels_like_description">По ощущениям теплее, чем можно было бы подумать</string>
-
-    <string name="section_wind">ВЕТЕР</string>
-    <string name="wind">Ветер</string>
-    <string name="wind_gusts">Порывы ветра</string>
+    <string name="average_title">В среднем</string>
+    <string name="average_value">На %1$d°</string>
+    <string name="average_description">выше среднесуточного максимума</string>
+    <string name="feels_like_title">Ощущается</string>
+    <string name="feels_like_description">По ощущениям теплее, чем на самом деле</string>
+    <string name="wind_title">Ветер</string>
+    <string name="wind_speed">Ветер</string>
+    <string name="wind_gust">Порывы ветра</string>
     <string name="wind_direction">Направление</string>
-    <string name="wind_speed_value">%1$d км/ч</string>
-
-    <string name="section_uv_index">УФ-ИНДЕКС</string>
+    <string name="wind_value_kmh">%1$d км/ч</string>
+    <string name="wind_direction_value">%1$d°</string>
+    <string name="background">background</string>
+    <string name="uv_title">УФ-индекс</string>
     <string name="uv_low">Низкий</string>
     <string name="uv_moderate">Умеренный</string>
     <string name="uv_high">Высокий</string>
-    <string name="uv_description">Остаётся низким до конца дня</string>
-
-    <string name="section_sunset">ЗАКАТ</string>
-    <string name="sunrise_at">Восход: %1$s</string>
-
-    <string name="section_humidity">ВЛАЖНОСТЬ</string>
+    <string name="uv_very_high">Очень высокий</string>
+    <string name="uv_extreme">Экстремальный</string>
+    <string name="sunset_title">Закат</string>
+    <string name="sunrise_label">Восход в %1$s</string>
+    <string name="humidity_title">Влажность</string>
     <string name="humidity_value">%1$d %%</string>
-    <string name="dew_point">Точка росы: %1$s°</string>
-
-    <string name="section_pressure">ДАВЛЕНИЕ</string>
-    <string name="pressure_value">%1$d</string>
+    <string name="dew_point_label">Точка росы: %1$d°</string>
+    <string name="pressure_title">Давление</string>
     <string name="pressure_unit">гПа</string>
-
-    <string name="search_hint">Поиск города или аэропорта</string>
-    <string name="more_info">Подробнее о метеорологических и картографических данных</string>
-
-    <string name="menu_edit_list">Изменить список</string>
-    <string name="menu_notifications">Уведомления</string>
-    <string name="menu_celsius">Градусы Цельсия</string>
-    <string name="menu_fahrenheit">Градусы Фаренгейта</string>
-    <string name="menu_units">Единицы</string>
-    <string name="menu_report_issue">Сообщить о проблеме</string>
-
-    <string name="temperature_degrees">%1$d°</string>
-
-    <string name="error_location">Не удалось определить местоположение</string>
-    <string name="error_network">Проблема с сетью</string>
-    <string name="permission_location_required">Нужно разрешение на геолокацию</string>
+    <string name="location_label">Работа</string>
+    <string name="collapsed_header">%1$d° | %2$s</string>
     <string name="retry">Повторить</string>
 </resources>

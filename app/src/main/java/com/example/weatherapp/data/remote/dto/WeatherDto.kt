@@ -4,36 +4,49 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class WeatherDto(
-    @SerialName("name") val cityName: String,
-    @SerialName("main") val main: MainDto,
-    @SerialName("weather") val weather: List<WeatherInfoDto>,
-    @SerialName("wind") val wind: WindDto,
-    @SerialName("visibility") val visibility: Int = 0,
-    @SerialName("sys") val sys: SysDto? = null
+data class OneCallResponseDto(
+    val current: CurrentDto,
+    val hourly: List<HourlyDto>,
+    val daily: List<DailyDto>,
 )
 
 @Serializable
-data class MainDto(
-    @SerialName("temp") val temp: Double,
+data class CurrentDto(
+    val temp: Double,
     @SerialName("feels_like") val feelsLike: Double,
-    @SerialName("humidity") val humidity: Int,
-    @SerialName("pressure") val pressure: Int,
-    @SerialName("temp_min") val tempMin: Double,
-    @SerialName("temp_max") val tempMax: Double,
+    val pressure: Int,
+    val humidity: Int,
+    @SerialName("wind_speed") val windSpeed: Double,
+    @SerialName("wind_gust") val windGust: Double? = null,
+    @SerialName("wind_deg") val windDeg: Int,
+    val sunrise: Long,
+    val sunset: Long,
+    val uvi: Double,
+    @SerialName("dew_point") val dewPoint: Double,
+    val visibility: Int,
+    val weather: List<WeatherInfoDto>,
 )
 
 @Serializable
-data class WindDto(
-    @SerialName("speed") val speed: Double,
-    @SerialName("deg") val deg: Int = 0,
-    @SerialName("gust") val gust: Double? = null
+data class HourlyDto(
+    val dt: Long,
+    val temp: Double,
+    val weather: List<WeatherInfoDto>,
 )
 
 @Serializable
-data class SysDto(
-    @SerialName("sunrise") val sunrise: Long,
-    @SerialName("sunset") val sunset: Long,
+data class DailyDto(
+    val dt: Long,
+    val temp: DailyTempDto,
+    val weather: List<WeatherInfoDto>,
+    val uvi: Double,
+    val summary: String? = null,
+)
+
+@Serializable
+data class DailyTempDto(
+    val min: Double,
+    val max: Double,
 )
 
 @Serializable

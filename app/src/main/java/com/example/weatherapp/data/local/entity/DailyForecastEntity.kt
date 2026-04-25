@@ -1,8 +1,7 @@
-package com.example.weatherapp.data.locale.entity
+package com.example.weatherapp.data.local.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-
 
 @Entity(tableName = "daily_forecast")
 data class DailyForecastEntity(
@@ -12,13 +11,5 @@ data class DailyForecastEntity(
     val icon: String,
     val minTemp:Double,
     val maxTemp:Double,
-)
-
-@Entity(tableName = "hourly_forecast")
-data class HourlyForecastEntity(
-    @PrimaryKey
-    val timeInMillis: Long,
-    val main: String,
-    val icon: String,
-    val temperature: Double,
+    val summary: String? = null,
 )

@@ -1,73 +1,38 @@
 package com.example.weatherapp.data.mapper
 
 
-import com.example.weatherapp.data.locale.entity.DailyForecastEntity
-import com.example.weatherapp.data.locale.entity.HourlyForecastEntity
-import com.example.weatherapp.data.locale.entity.WeatherEntity
-import com.example.weatherapp.data.remote.dto.ForecastItemDto
-import com.example.weatherapp.data.remote.dto.ForecastResponseDto
-import com.example.weatherapp.data.remote.dto.WeatherDto
+import com.example.weatherapp.data.local.entity.DailyForecastEntity
+import com.example.weatherapp.data.local.entity.HourlyForecastEntity
+import com.example.weatherapp.data.local.entity.WeatherEntity
+import com.example.weatherapp.data.remote.dto.CurrentDto
+import com.example.weatherapp.data.remote.dto.DailyDto
+import com.example.weatherapp.data.remote.dto.HourlyDto
 import com.example.weatherapp.domain.model.DailyForecast
 import com.example.weatherapp.domain.model.HourlyForecast
 import com.example.weatherapp.domain.model.Weather
 
-fun WeatherDto.toEntity(): WeatherEntity = WeatherEntity(
+fun CurrentDto.toEntity(cityName: String): WeatherEntity = WeatherEntity(
     id = 1,
     cityName = cityName,
     description = weather.firstOrNull()?.description ?: "",
     main = weather.firstOrNull()?.main ?: "",
     iconId = weather.firstOrNull()?.icon ?: "",
-    temperature = main.temp,
-    feelsLike = main.feelsLike,
-    pressure = main.pressure,
-    humidity = main.humidity,
-    windSpeed = wind.speed,
-    windGust = wind.gust,
-    windDirection = wind.deg,
-    sunrise = sys?.sunrise?.times(1000) ?: 0L,
-    sunset = sys?.sunset?.times(1000) ?: 0L,
-    tempMin = main.tempMin,
-    tempMax = main.tempMax,
+    temperature = temp,
+    feelsLike = feelsLike,
+    pressure = pressure,
+    humidity = humidity,
+    windSpeed = windSpeed,
+    windGust = windGust,
+    windDirection = windDeg,
+    sunrise = sunrise * 1000,
+    sunset = sunset * 1000,
+    tempMin = temp,
+    tempMax = temp,
     visibility = visibility,
+    uvIndex = uvi,
+    dewPoint = dewPoint,
     updatedAt = System.currentTimeMillis(),
 )
-
-fun ForecastResponseDto.toHourlyEntities(): List<HourlyForecastEntity> =
-    list.map { item ->
-        HourlyForecastEntity(
-            timeInMillis = item.dt * 1000,
-            temperature = item.main.temp,
-            main = item.weather.firstOrNull()?.main ?: "",
-            icon = item.weather.firstOrNull()?.icon ?: "",
-        )
-    }
-
-fun ForecastResponseDto.toDailyEntities(): List<DailyForecastEntity> =
-    list.groupBy { item ->
-        item.dt / 86400
-    }.map { (_, dayItems) ->
-        DailyForecastEntity(
-            dateInMillis = dayItems.first().dt * 1000,
-            minTemp = dayItems.minOf { it.main.tempMin },
-            maxTemp = dayItems.maxOf { it.main.tempMax },
-            main = dayItems.mostFrequentMain(),
-            icon = dayItems.mostFrequentIcon(),
-        )
-    }
-
-private fun List<ForecastItemDto>.mostFrequentMain(): String =
-    mapNotNull { it.weather.firstOrNull()?.main }
-        .groupingBy { it }
-        .eachCount()
-        .maxByOrNull { it.value }
-        ?.key ?: ""
-
-private fun List<ForecastItemDto>.mostFrequentIcon(): String =
-    mapNotNull { it.weather.firstOrNull()?.icon?.dropLast(1)?.plus("d") }
-        .groupingBy { it }
-        .eachCount()
-        .maxByOrNull { it.value }
-        ?.key ?: ""
 
 fun WeatherEntity.toDomain(): Weather = Weather(
     cityName = cityName,
@@ -87,7 +52,17 @@ fun WeatherEntity.toDomain(): Weather = Weather(
     tempMax = tempMax,
     visibility = visibility,
     updatedAt = updatedAt,
+    uvIndex = uvIndex,
+    dewPoint = dewPoint
 )
+
+fun HourlyDto.toHourlyEntity(): HourlyForecastEntity = HourlyForecastEntity(
+    timeInMillis = dt * 1000,
+    temperature = temp,
+    main = weather.firstOrNull()?.main ?: "",
+    icon = weather.firstOrNull()?.icon ?: "",
+)
+
 
 fun HourlyForecastEntity.toDomain(): HourlyForecast = HourlyForecast(
     timeInMillis = timeInMillis,
@@ -96,10 +71,20 @@ fun HourlyForecastEntity.toDomain(): HourlyForecast = HourlyForecast(
     icon = icon,
 )
 
+fun DailyDto.toDailyEntity(): DailyForecastEntity = DailyForecastEntity(
+    dateInMillis = dt * 1000,
+    minTemp = temp.min,
+    maxTemp = temp.max,
+    main = weather.firstOrNull()?.main ?: "",
+    icon = weather.firstOrNull()?.icon ?: "",
+    summary = summary,
+)
+
 fun DailyForecastEntity.toDomain(): DailyForecast = DailyForecast(
     dateInMillis = dateInMillis,
     minTemp = minTemp,
     maxTemp = maxTemp,
     main = main,
     icon = icon,
+    summary = summary,
 )

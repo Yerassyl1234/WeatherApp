@@ -1,5 +1,6 @@
 package com.example.weatherapp.data.common
 
+import kotlinx.serialization.SerializationException
 import retrofit2.Response
 import java.io.IOException
 import java.net.SocketTimeoutException
@@ -47,10 +48,19 @@ suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): AppResult<T> {
     } catch (e: CancellationException) {
         throw e
     } catch (e: SocketTimeoutException) {
-        AppResult.Error(AppException.Timeout)
+        AppResult.Error(AppException.Timeout())
     } catch (e: IOException) {
-        AppResult.Error(AppException.NoInternet)
+        AppResult.Error(AppException.NoInternet())
     } catch (e: Exception) {
-        AppResult.Error(AppException.Unknown(e.message ?: "Unknown error"))
+        if (e is SerializationException) {
+            return AppResult.Error(AppException.ParseError(originalException = e))
+        } else {
+            AppResult.Error(
+                AppException.Unknown(
+                    errorMsg = e.message ?: "Unknown error",
+                    originalException = e
+                )
+            )
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.weatherapp.data.remote
 
+import com.example.weatherapp.BuildConfig
 import com.example.weatherapp.data.remote.api.WeatherApi
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.json.Json
@@ -16,9 +17,13 @@ object RetrofitClient {
 
     private val okHttpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
-            .addInterceptor(HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
-            })
+            .apply {
+                if (BuildConfig.DEBUG) {
+                    addInterceptor(HttpLoggingInterceptor().apply {
+                        level = HttpLoggingInterceptor.Level.BODY
+                    })
+                }
+            }
             .build()
     }
 

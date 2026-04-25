@@ -14,4 +14,5 @@ class LocationTracker(private val context: Context) {
         val client = LocationServices.getFusedLocationProviderClient(context)
         return client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null).await()
     }
+
 }
