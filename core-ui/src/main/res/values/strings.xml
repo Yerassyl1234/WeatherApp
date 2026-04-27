@@ -19,6 +19,9 @@
     <string name="now">Сейчас</string>
     <string name="core_ui_ok">ОК</string>
     <string name="today">Сегодня</string>
+    <string name="tab_weather">Погода</string>
+    <string name="tab_map">Карта</string>
+    <string name="tab_cities">Города</string>
     <string name="average_title">В среднем</string>
     <string name="average_value">На %1$d°</string>
     <string name="average_description">выше среднесуточного максимума</string>
@@ -47,4 +50,12 @@
     <string name="location_label">Работа</string>
     <string name="collapsed_header">%1$d° | %2$s</string>
     <string name="retry">Повторить</string>
+    <string name="search_hint">Поиск города или аэропорта</string>
+    <string name="cities_title">Погода</string>
+    <string name="settings_edit_list">Изменить список</string>
+    <string name="settings_notification">Уведомления</string>
+    <string name="settings_celsius">Градусы Цельсия</string>
+    <string name="settings_fahrenheit">Градусы Фаренгейта</string>
+    <string name="settings_units">Единицы</string>
+    <string name="settings_report">Сообщить о проблеме</string>
 </resources>

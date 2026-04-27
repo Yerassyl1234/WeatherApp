@@ -1,38 +1,34 @@
 package com.example.weatherapp.presentation.screens.main
 
-import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.weatherapp.BaseViewModel
 import com.example.weatherapp.core.ui.R
 import com.example.weatherapp.core.ui.util.UiText
+import com.example.weatherapp.data.common.AppException
 import com.example.weatherapp.data.common.location.LocationTracker
 import com.example.weatherapp.data.common.onError
 import com.example.weatherapp.data.common.onSuccess
 import com.example.weatherapp.domain.repository.WeatherRepository
 import com.example.weatherapp.presentation.mapper.toUiText
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class MainViewModel(
     private val repository: WeatherRepository,
     private val locationTracker: LocationTracker,
-) : ViewModel() {
-
-    private val _state = MutableStateFlow(MainUiState())
-    val state: StateFlow<MainUiState> = _state.asStateFlow()
+) : BaseViewModel<MainUiState, MainAction, MainEffect>(
+    initialState = MainUiState()
+) {
 
     init {
         observeWeatherData()
     }
 
-    fun onAction(action: MainAction) {
+    override fun onAction(action: MainAction) {
         when (action) {
             is MainAction.LoadWeather -> loadWeather(action.isRefreshing)
+            is MainAction.PermissionDenied -> {updateState {copy(error = AppException.LocationPermissionDenied().toUiText())}}
         }
     }
 
@@ -43,8 +39,8 @@ class MainViewModel(
                 repository.observeHourlyForecast(),
                 repository.observeDailyForecast(),
             ) { weather, hourly, daily ->
-                _state.update {
-                    it.copy(
+                updateState {
+                    copy(
                         weather = weather,
                         hourlyForecast = hourly,
                         dailyForecast = daily,
@@ -55,8 +51,8 @@ class MainViewModel(
     }
 
     private fun loadWeather(isRefreshing: Boolean = false) {
-        _state.update {
-            it.copy(
+        updateState {
+            copy(
                 isLoading = !isRefreshing,
                 isRefreshing = isRefreshing,
             )
@@ -66,8 +62,8 @@ class MainViewModel(
             val location = locationTracker.getLocation()
 
             if (location == null) {
-                _state.update {
-                    it.copy(
+                updateState {
+                    copy(
                         isLoading = false,
                         isRefreshing = false,
                         error = UiText.StringResource(R.string.core_ui_error_location_disabled)
@@ -78,13 +74,13 @@ class MainViewModel(
 
             repository.refreshWeather(location.latitude, location.longitude)
                 .onSuccess {
-                    _state.update {
-                        it.copy(isLoading = false, isRefreshing = false, error = null)
+                    updateState {
+                        copy(isLoading = false, isRefreshing = false, error = null)
                     }
                 }
                 .onError { exception ->
-                    _state.update {
-                        it.copy(
+                    updateState {
+                        copy(
                             isLoading = false,
                             isRefreshing = false,
                             error = exception.toUiText(),

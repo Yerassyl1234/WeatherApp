@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.example.weatherapp.core.ui.theme.WeatherAppTheme
+import com.example.weatherapp.presentation.navigation.NavGraph
 import com.example.weatherapp.presentation.screens.main.MainScreen
 
 class MainActivity : ComponentActivity() {
@@ -15,7 +16,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             WeatherAppTheme {
-                MainScreen()
+                NavGraph()
             }
         }
     }

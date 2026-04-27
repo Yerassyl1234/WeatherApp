@@ -7,6 +7,7 @@ import com.example.weatherapp.data.local.db.WeatherDatabase
 import com.example.weatherapp.data.remote.RetrofitClient
 import com.example.weatherapp.data.repository.WeatherRepositoryImpl
 import com.example.weatherapp.domain.repository.WeatherRepository
+import com.example.weatherapp.presentation.screens.cities.CitiesViewModel
 import com.example.weatherapp.presentation.screens.main.MainViewModel
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.module
@@ -27,5 +28,6 @@ val appModule = module {
     single<WeatherRepository> { WeatherRepositoryImpl(get(), get(), get()) }
 
     viewModel { MainViewModel(get(), get()) }
+    viewModel { CitiesViewModel() }
 }
 

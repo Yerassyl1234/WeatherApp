@@ -37,4 +37,5 @@ dependencies {
     api(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
+    debugImplementation(libs.ui.tooling)
 }

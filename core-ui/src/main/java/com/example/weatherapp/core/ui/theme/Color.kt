@@ -1,6 +1,7 @@
 package com.example.weatherapp.core.ui.theme
 
 
+import android.graphics.Color.alpha
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable

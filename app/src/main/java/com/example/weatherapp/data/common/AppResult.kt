@@ -52,10 +52,9 @@ suspend fun <T> safeApiCall(apiCall: suspend () -> Response<T>): AppResult<T> {
     } catch (e: IOException) {
         AppResult.Error(AppException.NoInternet())
     } catch (e: Exception) {
-        if (e is SerializationException) {
-            return AppResult.Error(AppException.ParseError(originalException = e))
-        } else {
-            AppResult.Error(
+        return when (e) {
+            is SerializationException -> AppResult.Error(AppException.ParseError(originalException = e))
+            else -> AppResult.Error(
                 AppException.Unknown(
                     errorMsg = e.message ?: "Unknown error",
                     originalException = e

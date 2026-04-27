@@ -34,6 +34,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -73,18 +74,22 @@ import com.example.weatherapp.core.ui.component.WeatherInfoCard
 import com.example.weatherapp.core.ui.theme.spacing
 import com.example.weatherapp.core.ui.theme.weatherColors
 import com.example.weatherapp.core.ui.util.setWeatherBg
+import com.example.weatherapp.data.common.AppException
 import com.example.weatherapp.domain.model.DailyForecast
 import com.example.weatherapp.domain.model.HourlyForecast
 import com.example.weatherapp.domain.model.Weather
 import com.example.weatherapp.presentation.common.toDayString
 import com.example.weatherapp.presentation.common.toTimeString
+import com.example.weatherapp.presentation.navigation.BottomNavBar
+import com.example.weatherapp.presentation.navigation.BottomNavItem
 import org.koin.androidx.compose.koinViewModel
 import java.util.Calendar
 import kotlin.math.roundToInt
 
 @Composable
 fun MainScreen(
-    viewModel: MainViewModel = koinViewModel()
+    onNavigateToCities: () -> Unit,
+    viewModel: MainViewModel = koinViewModel(),
 ) {
 
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -92,10 +97,11 @@ fun MainScreen(
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted ->
+    ) {
+        granted ->
         if (granted) {
             viewModel.onAction(MainAction.LoadWeather())
-        }
+        } else AppException.LocationPermissionDenied()
     }
 
     LaunchedEffect(Unit) {
@@ -110,31 +116,45 @@ fun MainScreen(
             permissionLauncher.launch(ACCESS_FINE_LOCATION)
         }
     }
-
     WeatherBackground(
         background = setWeatherBg(
             hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY),
             isRaining = state.weather?.main == "Rain",
         ),
     ) {
-        when {
-            state.isLoading -> {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+        Box(modifier = Modifier.fillMaxSize()) {
+            when {
+                state.isLoading -> {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                }
+
+                state.error != null && state.weather == null -> {
+                    ErrorScreen(
+                        message = state.error?.asString() ?: "",
+                        onRetry = { permissionLauncher.launch(ACCESS_FINE_LOCATION) },
+                    )
+                }
+
+                state.weather != null -> {
+                    CollapsingWeatherLayout(
+                        state = state,
+                        onAction = { viewModel.onAction(it) },
+                    )
                 }
             }
-            state.error != null && state.weather == null -> {
-                ErrorScreen(
-                    message = state.error!!.asString(),
-                    onRetry = { viewModel.onAction(MainAction.LoadWeather()) },
-                )
-            }
-            state.weather != null -> {
-                CollapsingWeatherLayout(
-                    state = state,
-                    onAction = { viewModel.onAction(it) },
-                )
-            }
+
+            BottomNavBar(
+                selectedItem = BottomNavItem.Main,
+                onItemClick = { item ->
+                    when (item) {
+                        BottomNavItem.Cities -> onNavigateToCities()
+                        else -> {}
+                    }
+                },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         }
     }
 }
@@ -196,7 +216,8 @@ fun CollapsingWeatherLayout(
                 if (delta < 0) {
                     if (headerOffset < maxHeightPx - minHeightPx) {
                         val oldOffset = headerOffset
-                        headerOffset = (headerOffset - delta).coerceIn(0f, maxHeightPx - minHeightPx)
+                        headerOffset =
+                            (headerOffset - delta).coerceIn(0f, maxHeightPx - minHeightPx)
                         val consumed = oldOffset - headerOffset
                         return Offset(0f, consumed)
                     }
@@ -229,7 +250,8 @@ fun CollapsingWeatherLayout(
         (maxHeightPx - headerOffset).toDp()
     }
 
-    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val navigationBarPadding =
+        WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
 
     Box(
         modifier = modifier
@@ -241,15 +263,15 @@ fun CollapsingWeatherLayout(
                 isRefreshing = state.isRefreshing,
                 onRefresh = { onAction(MainAction.LoadWeather(isRefreshing = true)) },
                 modifier = Modifier.clipToBounds(),
-            ){
-            Column(Modifier.fillMaxSize()) {
-                CollapsibleHeader(
-                    weather = weather,
-                    fraction = fraction,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(currentHeaderHeight),
-                )
+            ) {
+                Column(Modifier.fillMaxSize()) {
+                    CollapsibleHeader(
+                        weather = weather,
+                        fraction = fraction,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(currentHeaderHeight),
+                    )
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
@@ -353,8 +375,8 @@ private fun HourlyForecastSection(
     modifier: Modifier = Modifier,
 ) {
     WeatherInfoCard(
-        modifier=modifier.fillMaxWidth()
-    ){
+        modifier = modifier.fillMaxWidth()
+    ) {
         if (summary != null) {
             Text(
                 text = summary,
@@ -369,7 +391,7 @@ private fun HourlyForecastSection(
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
         ) {
-            items(forecasts.size){ index->
+            items(forecasts.size) { index ->
                 HourlyItem(
                     forecast = forecasts[index],
                     isFirst = index == 0
@@ -382,7 +404,7 @@ private fun HourlyForecastSection(
 @Composable
 private fun HourlyItem(
     forecast: HourlyForecast,
-    isFirst:Boolean
+    isFirst: Boolean
 ) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -418,7 +440,7 @@ private fun DailyForecastSection(
 ) {
     WeatherInfoCard(
         modifier = modifier.fillMaxWidth()
-    ){
+    ) {
         WeatherCardTitle(
             icon = painterResource(R.drawable.calendar),
             title = stringResource(R.string.core_ui_daily_forecast_title)
@@ -429,6 +451,7 @@ private fun DailyForecastSection(
         )
 
         forecasts.forEachIndexed { index, forecast ->
+
             DailyItem(
                 forecast = forecast,
                 isToday = index == 0,
@@ -504,8 +527,10 @@ private fun TemperatureSection(
             .fillMaxWidth()
             .height(IntrinsicSize.Max),
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
-    ){
-        WeatherInfoCard(modifier = Modifier.weight(1f).fillMaxHeight()){
+    ) {
+        WeatherInfoCard(modifier = Modifier
+            .weight(1f)
+            .fillMaxHeight()) {
             WeatherCardTitle(
                 icon = painterResource(R.drawable.graph),
                 title = stringResource(R.string.average_title),
@@ -524,7 +549,9 @@ private fun TemperatureSection(
                 )
             )
         }
-        WeatherInfoCard(modifier = modifier.weight(1f).fillMaxHeight()){
+        WeatherInfoCard(modifier = modifier
+            .weight(1f)
+            .fillMaxHeight()) {
             WeatherCardTitle(
                 icon = painterResource(R.drawable.thermometer),
                 title = stringResource(R.string.feels_like_title),
@@ -539,7 +566,7 @@ private fun TemperatureSection(
             Text(
                 text = stringResource(R.string.feels_like_description),
                 style = MaterialTheme.typography.bodySmall.copy(
-                    color= MaterialTheme.weatherColors.textSecondary,
+                    color = MaterialTheme.weatherColors.textSecondary,
                 ),
             )
         }
@@ -682,6 +709,7 @@ fun HumidityAndPressureSection(
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
     ) {
         WeatherInfoCard(modifier = Modifier.weight(1f)) {
+
             WeatherCardTitle(
                 icon = painterResource(R.drawable.humidity),
                 title = stringResource(R.string.humidity_title),
