@@ -1,0 +1,1011 @@
+Index: app/src/main/java/com/example/weatherapp/BaseViewModel.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/weatherapp/BaseViewModel.kt b/app/src/main/java/com/example/weatherapp/BaseViewModel.kt
+new file mode 100644
+--- /dev/null	(date 1777283182829)
++++ b/app/src/main/java/com/example/weatherapp/BaseViewModel.kt	(date 1777283182829)
+@@ -0,0 +1,34 @@
++package com.example.weatherapp
++
++import androidx.lifecycle.ViewModel
++import androidx.lifecycle.viewModelScope
++import kotlinx.coroutines.channels.Channel
++import kotlinx.coroutines.flow.MutableStateFlow
++import kotlinx.coroutines.flow.StateFlow
++import kotlinx.coroutines.flow.asStateFlow
++import kotlinx.coroutines.flow.receiveAsFlow
++import kotlinx.coroutines.flow.update
++import kotlinx.coroutines.launch
++
++abstract class BaseViewModel<S, A, E>(
++    initialState: S
++) : ViewModel() {
++
++    private val _state = MutableStateFlow(initialState)
++    val state: StateFlow<S> = _state.asStateFlow()
++
++    private val _effects = Channel<E>(Channel.BUFFERED)
++    val effects = _effects.receiveAsFlow()
++
++    protected fun updateState(block: S.() -> S) {
++        _state.update(block)
++    }
++
++    protected fun sendEffect(effect: E) {
++        viewModelScope.launch {
++            _effects.send(effect)
++        }
++    }
++
++    abstract fun onAction(action: A)
++}
+\ No newline at end of file
+Index: core-ui/src/main/java/com/example/weatherapp/core/ui/component/SettingsItem.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/core-ui/src/main/java/com/example/weatherapp/core/ui/component/SettingsItem.kt b/core-ui/src/main/java/com/example/weatherapp/core/ui/component/SettingsItem.kt
+new file mode 100644
+--- /dev/null	(date 1777283182855)
++++ b/core-ui/src/main/java/com/example/weatherapp/core/ui/component/SettingsItem.kt	(date 1777283182855)
+@@ -0,0 +1,59 @@
++package com.example.weatherapp.core.ui.component
++
++import androidx.annotation.DrawableRes
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.interaction.MutableInteractionSource
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.width
++import androidx.compose.material3.Icon
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.remember
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.res.painterResource
++import androidx.compose.ui.unit.dp
++import com.example.weatherapp.core.ui.theme.spacing
++import com.example.weatherapp.core.ui.theme.weatherColors
++
++@Composable
++fun SettingsItem(
++    @DrawableRes iconRes: Int,
++    title: String,
++    onClick: () -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    Row(
++        modifier = modifier
++            .fillMaxWidth()
++            .clickable(
++                interactionSource = remember { MutableInteractionSource() },
++                indication = null,
++            ) { onClick() }
++            .padding(
++                horizontal = MaterialTheme.spacing.large,
++                vertical = MaterialTheme.spacing.medium,
++            ),
++        verticalAlignment = Alignment.CenterVertically,
++    ) {
++        Icon(
++            painter = painterResource(iconRes),
++            contentDescription = null,
++            modifier = Modifier.size(22.dp),
++            tint = MaterialTheme.weatherColors.textPrimary,
++        )
++
++        Spacer(modifier = Modifier.width(MaterialTheme.spacing.medium))
++
++        Text(
++            text = title,
++            style = MaterialTheme.typography.bodyLarge,
++            color = MaterialTheme.weatherColors.textPrimary,
++        )
++    }
++}
+\ No newline at end of file
+Index: core-ui/src/main/java/com/example/weatherapp/core/ui/component/SearchBar.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/core-ui/src/main/java/com/example/weatherapp/core/ui/component/SearchBar.kt b/core-ui/src/main/java/com/example/weatherapp/core/ui/component/SearchBar.kt
+new file mode 100644
+--- /dev/null	(date 1777283182854)
++++ b/core-ui/src/main/java/com/example/weatherapp/core/ui/component/SearchBar.kt	(date 1777283182854)
+@@ -0,0 +1,136 @@
++package com.example.weatherapp.core.ui.component
++
++import androidx.compose.foundation.background
++import androidx.compose.foundation.border
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.layout.Box
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.Spacer
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.width
++import androidx.compose.foundation.shape.RoundedCornerShape
++import androidx.compose.foundation.text.BasicTextField
++import androidx.compose.foundation.text.KeyboardActions
++import androidx.compose.foundation.text.KeyboardOptions
++import androidx.compose.material.icons.Icons
++import androidx.compose.material.icons.filled.Close
++import androidx.compose.material.icons.filled.Search
++import androidx.compose.material3.Icon
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.Text
++import androidx.compose.runtime.Composable
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.draw.clip
++import androidx.compose.ui.graphics.SolidColor
++import androidx.compose.ui.platform.LocalFocusManager
++import androidx.compose.ui.res.painterResource
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.text.input.ImeAction
++import androidx.compose.ui.text.input.KeyboardType
++import androidx.compose.ui.tooling.preview.Preview
++import androidx.compose.ui.unit.dp
++import com.example.weatherapp.core.ui.R
++import com.example.weatherapp.core.ui.theme.WeatherAppTheme
++import com.example.weatherapp.core.ui.theme.spacing
++import com.example.weatherapp.core.ui.theme.weatherColors
++
++@Composable
++fun SearchBar(
++    query: String,
++    onQueryChange: (String) -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    val focusManager = LocalFocusManager.current
++
++    Row(
++        modifier = modifier
++            .fillMaxWidth()
++            .clip(RoundedCornerShape(12.dp))
++            .border(
++                width = 1.dp,
++                color = MaterialTheme.weatherColors.textSecondary.copy(alpha = 0.4f),
++                shape = RoundedCornerShape(12.dp),
++            )
++            .background(MaterialTheme.weatherColors.card)
++            .padding(horizontal = MaterialTheme.spacing.medium, vertical = 12.dp),
++        verticalAlignment = Alignment.CenterVertically,
++    ) {
++        Icon(
++            imageVector = Icons.Default.Search,
++            contentDescription = null,
++            modifier = Modifier.size(22.dp),
++            tint = MaterialTheme.weatherColors.textSecondary,
++        )
++
++        Spacer(Modifier.width(MaterialTheme.spacing.small))
++
++        Box(modifier = Modifier.weight(1f)) {
++            if (query.isEmpty()) {
++                Text(
++                    text = stringResource(R.string.search_hint),
++                    style = MaterialTheme.typography.bodyMedium,
++                    color = MaterialTheme.weatherColors.textSecondary,
++                )
++            }
++
++            BasicTextField(
++                value = query,
++                onValueChange = onQueryChange,
++                modifier = Modifier.fillMaxWidth(),
++                textStyle = MaterialTheme.typography.bodyMedium.copy(
++                    color = MaterialTheme.weatherColors.textPrimary,
++                ),
++                cursorBrush = SolidColor(MaterialTheme.weatherColors.textPrimary),
++                singleLine = true,
++                keyboardOptions = KeyboardOptions(
++                    keyboardType = KeyboardType.Text,
++                    imeAction = ImeAction.Search,
++                ),
++                keyboardActions = KeyboardActions(
++                    onSearch = { focusManager.clearFocus() },
++                ),
++            )
++        }
++
++        if (query.isNotBlank()) {
++            Box(
++                modifier = Modifier
++                    .size(22.dp)
++                    .clip(RoundedCornerShape(50))
++                    .background(MaterialTheme.weatherColors.textSecondary.copy(alpha = 0.25f))
++                    .clickable { onQueryChange("") },
++                contentAlignment = Alignment.Center,
++            ) {
++                Icon(
++                    imageVector = Icons.Default.Close,
++                    contentDescription = null,
++                    tint = MaterialTheme.weatherColors.textPrimary,
++                    modifier = Modifier.size(14.dp),
++                )
++            }
++        } else {
++            Icon(
++                painter = painterResource(R.drawable.microphone),
++                contentDescription = null,
++                modifier = Modifier.size(22.dp),
++                tint = MaterialTheme.weatherColors.textSecondary,
++            )
++        }
++    }
++}
++
++
++@Preview(showBackground = true)
++@Composable
++private fun SearchBarPreview() {
++    WeatherAppTheme {
++        SearchBar(
++            query = "",
++            onQueryChange = {},
++            modifier = Modifier.padding(16.dp),
++        )
++    }
++}
+\ No newline at end of file
+Index: app/src/main/java/com/example/weatherapp/presentation/navigation/Screen.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/weatherapp/presentation/navigation/Screen.kt b/app/src/main/java/com/example/weatherapp/presentation/navigation/Screen.kt
+new file mode 100644
+--- /dev/null	(date 1777283182841)
++++ b/app/src/main/java/com/example/weatherapp/presentation/navigation/Screen.kt	(date 1777283182841)
+@@ -0,0 +1,17 @@
++package com.example.weatherapp.presentation.navigation
++
++import kotlinx.serialization.Serializable
++
++@Serializable
++sealed interface Screen {
++
++    @Serializable
++    data object Map:Screen
++
++    @Serializable
++    data object Main : Screen
++
++    @Serializable
++    data object Cities : Screen
++
++}
+\ No newline at end of file
+Index: app/src/main/java/com/example/weatherapp/presentation/navigation/NavGraph.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/weatherapp/presentation/navigation/NavGraph.kt b/app/src/main/java/com/example/weatherapp/presentation/navigation/NavGraph.kt
+new file mode 100644
+--- /dev/null	(date 1777283182841)
++++ b/app/src/main/java/com/example/weatherapp/presentation/navigation/NavGraph.kt	(date 1777283182841)
+@@ -0,0 +1,34 @@
++package com.example.weatherapp.presentation.navigation
++
++import androidx.compose.runtime.Composable
++import androidx.navigation.NavGraph
++import androidx.navigation.compose.NavHost
++import androidx.navigation.compose.composable
++import androidx.navigation.compose.rememberNavController
++import com.example.weatherapp.presentation.screens.cities.CitiesScreen
++import com.example.weatherapp.presentation.screens.main.MainScreen
++
++@Composable
++fun NavGraph(){
++    val navController = rememberNavController()
++
++    NavHost(
++        navController = navController,
++        startDestination = Screen.Main,
++    ){
++        composable<Screen.Main>{
++            MainScreen(
++                onNavigateToCities = {
++                    navController.navigate(Screen.Cities)
++                },
++            )
++        }
++        composable<Screen.Cities> {
++            CitiesScreen(
++                onNavigateToWeather = {
++                    navController.popBackStack()
++                },
++            )
++        }
++    }
++}
+\ No newline at end of file
+Index: app/src/main/java/com/example/weatherapp/presentation/navigation/BottomNavItem.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/weatherapp/presentation/navigation/BottomNavItem.kt b/app/src/main/java/com/example/weatherapp/presentation/navigation/BottomNavItem.kt
+new file mode 100644
+--- /dev/null	(date 1777283182839)
++++ b/app/src/main/java/com/example/weatherapp/presentation/navigation/BottomNavItem.kt	(date 1777283182839)
+@@ -0,0 +1,27 @@
++package com.example.weatherapp.presentation.navigation
++
++import androidx.annotation.DrawableRes
++import androidx.annotation.StringRes
++import com.example.weatherapp.core.ui.R
++
++enum class BottomNavItem(
++    val screen: Screen,
++    @DrawableRes val iconRes: Int,
++    @StringRes val labelRes: Int,
++) {
++    Map(
++        screen = Screen.Map,
++        iconRes = R.drawable.tabbar_map,
++        labelRes = R.string.tab_map,
++    ),
++    Main(
++        screen = Screen.Main,
++        iconRes = R.drawable.tabbar_detail,
++        labelRes = R.string.tab_weather,
++    ),
++    Cities(
++        screen = Screen.Cities,
++        iconRes = R.drawable.tabbar_cities,
++        labelRes = R.string.tab_cities
++    ),
++}
+\ No newline at end of file
+Index: app/src/main/java/com/example/weatherapp/presentation/navigation/BottomNavBar.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/weatherapp/presentation/navigation/BottomNavBar.kt b/app/src/main/java/com/example/weatherapp/presentation/navigation/BottomNavBar.kt
+new file mode 100644
+--- /dev/null	(date 1777283182839)
++++ b/app/src/main/java/com/example/weatherapp/presentation/navigation/BottomNavBar.kt	(date 1777283182839)
+@@ -0,0 +1,60 @@
++package com.example.weatherapp.presentation.navigation
++
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.interaction.MutableInteractionSource
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.WindowInsets
++import androidx.compose.foundation.layout.asPaddingValues
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.navigationBars
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.material3.Icon
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.remember
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.res.painterResource
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.unit.dp
++import com.example.weatherapp.core.ui.theme.spacing
++import com.example.weatherapp.core.ui.theme.weatherColors
++
++@Composable
++fun BottomNavBar(
++    selectedItem: BottomNavItem,
++    onItemClick: (BottomNavItem) -> Unit,
++    modifier: Modifier = Modifier,
++) {
++    Row(
++        modifier = modifier
++            .fillMaxWidth()
++            .padding(
++                bottom = WindowInsets.navigationBars
++                    .asPaddingValues()
++                    .calculateBottomPadding() + MaterialTheme.spacing.small,
++            ),
++        horizontalArrangement = Arrangement.SpaceEvenly,
++        verticalAlignment = Alignment.CenterVertically,
++    ) {
++        BottomNavItem.entries.forEach { item ->
++            Icon(
++                painter = painterResource(item.iconRes),
++                contentDescription = stringResource(item.labelRes),
++                tint = if (item == selectedItem) {
++                    MaterialTheme.weatherColors.textPrimary
++                } else {
++                    MaterialTheme.weatherColors.textSecondary
++                },
++                modifier = Modifier
++                    .size(60.dp)
++                    .clickable(
++                        interactionSource = remember { MutableInteractionSource() },
++                        indication = null,
++                    ) { onItemClick(item) },
++            )
++        }
++    }
++}
+\ No newline at end of file
+Index: app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesUiState.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesUiState.kt b/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesUiState.kt
+new file mode 100644
+--- /dev/null	(date 1777283182845)
++++ b/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesUiState.kt	(date 1777283182845)
+@@ -0,0 +1,13 @@
++package com.example.weatherapp.presentation.screens.cities
++
++import androidx.compose.runtime.Immutable
++import com.example.weatherapp.core.ui.util.UiText
++import com.example.weatherapp.domain.model.CityWeather
++
++@Immutable
++data class CitiesUiState(
++    val cities: List<CityWeather> = emptyList(),
++    val query: String = "",
++    val isLoading: Boolean = false,
++    val error: UiText? = null,
++)
+Index: core-ui/src/main/res/drawable/tabbar_map.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/core-ui/src/main/res/drawable/tabbar_map.xml b/core-ui/src/main/res/drawable/tabbar_map.xml
+new file mode 100644
+--- /dev/null	(date 1777283182859)
++++ b/core-ui/src/main/res/drawable/tabbar_map.xml	(date 1777283182859)
+@@ -0,0 +1,30 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:aapt="http://schemas.android.com/aapt"
++    android:width="54dp"
++    android:height="54dp"
++    android:viewportWidth="54"
++    android:viewportHeight="54">
++  <path
++      android:pathData="M27,1L27,1A22,22 0,0 1,49 23L49,23A22,22 0,0 1,27 45L27,45A22,22 0,0 1,5 23L5,23A22,22 0,0 1,27 1z">
++    <aapt:attr name="android:fillColor">
++      <gradient 
++          android:startX="27"
++          android:startY="1"
++          android:endX="27"
++          android:endY="45"
++          android:type="linear">
++        <item android:offset="0" android:color="#000C2741"/>
++        <item android:offset="1" android:color="#840C2741"/>
++      </gradient>
++    </aapt:attr>
++  </path>
++  <path
++      android:strokeWidth="1"
++      android:pathData="M27,0.5L27,0.5A22.5,22.5 0,0 1,49.5 23L49.5,23A22.5,22.5 0,0 1,27 45.5L27,45.5A22.5,22.5 0,0 1,4.5 23L4.5,23A22.5,22.5 0,0 1,27 0.5z"
++      android:strokeAlpha="0.52"
++      android:fillColor="#00000000"
++      android:strokeColor="#ffffff"/>
++  <path
++      android:pathData="M18.135,32.49C17.237,32.49 16.68,31.953 16.68,31.064V17.93C16.68,17.129 17.002,16.582 17.735,16.172L22.412,13.516C22.793,13.301 23.223,13.193 23.653,13.193C24.102,13.193 24.541,13.311 24.951,13.535L29.961,16.543L34.746,13.887C35.186,13.642 35.498,13.496 35.869,13.496C36.768,13.496 37.325,14.053 37.325,14.941V28.027C37.325,28.838 37.012,29.414 36.27,29.824L31.573,32.471C31.172,32.695 30.733,32.813 30.284,32.813C29.834,32.813 29.375,32.695 28.936,32.451L23.877,29.629L19.258,32.129C18.829,32.363 18.506,32.49 18.135,32.49ZM22.852,27.764V15.693C22.744,15.752 22.657,15.801 22.549,15.859L19.053,17.881C18.78,18.037 18.672,18.213 18.672,18.516V29.639C18.672,29.795 18.741,29.902 18.877,29.902C18.926,29.902 18.994,29.873 19.073,29.834L22.852,27.764ZM24.883,27.744L28.741,29.902C28.868,29.98 28.994,30.039 29.121,30.107V18.467L25.196,16.123C25.098,16.064 24.981,16.006 24.883,15.947V27.744ZM31.162,30.234C31.309,30.156 31.465,30.068 31.612,29.98L34.951,28.057C35.225,27.9 35.332,27.725 35.332,27.422V16.367C35.332,16.23 35.244,16.123 35.108,16.123C35.049,16.123 34.991,16.152 34.932,16.182L31.162,18.242V30.234Z"
++      android:fillColor="#ffffff"/>
++</vector>
+Index: app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesScreen.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesScreen.kt b/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesScreen.kt
+new file mode 100644
+--- /dev/null	(date 1777283182845)
++++ b/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesScreen.kt	(date 1777283182845)
+@@ -0,0 +1,219 @@
++package com.example.weatherapp.presentation.screens.cities
++
++import androidx.compose.foundation.clickable
++import androidx.compose.foundation.interaction.MutableInteractionSource
++import androidx.compose.foundation.layout.Arrangement
++import androidx.compose.foundation.layout.Column
++import androidx.compose.foundation.layout.PaddingValues
++import androidx.compose.foundation.layout.Row
++import androidx.compose.foundation.layout.WindowInsets
++import androidx.compose.foundation.layout.asPaddingValues
++import androidx.compose.foundation.layout.fillMaxSize
++import androidx.compose.foundation.layout.imePadding
++import androidx.compose.foundation.layout.navigationBarsPadding
++import androidx.compose.foundation.layout.fillMaxWidth
++import androidx.compose.foundation.layout.navigationBars
++import androidx.compose.foundation.layout.padding
++import androidx.compose.foundation.layout.size
++import androidx.compose.foundation.layout.statusBars
++import androidx.compose.foundation.lazy.LazyColumn
++import androidx.compose.foundation.lazy.items
++import androidx.compose.material3.ExperimentalMaterial3Api
++import androidx.compose.material3.HorizontalDivider
++import androidx.compose.material3.Icon
++import androidx.compose.material3.IconButton
++import androidx.compose.material3.MaterialTheme
++import androidx.compose.material3.ModalBottomSheet
++import androidx.compose.material3.Text
++import androidx.compose.material3.rememberModalBottomSheetState
++import androidx.compose.runtime.Composable
++import androidx.compose.runtime.LaunchedEffect
++import androidx.compose.runtime.getValue
++import androidx.compose.runtime.mutableStateOf
++import androidx.compose.runtime.remember
++import androidx.compose.runtime.setValue
++import androidx.compose.ui.Alignment
++import androidx.compose.ui.Modifier
++import androidx.compose.ui.res.painterResource
++import androidx.compose.ui.res.stringResource
++import androidx.compose.ui.unit.dp
++import androidx.lifecycle.compose.collectAsStateWithLifecycle
++import com.example.weatherapp.core.ui.R
++import com.example.weatherapp.core.ui.component.CityWeatherCard
++import com.example.weatherapp.core.ui.component.SearchBar
++import com.example.weatherapp.core.ui.component.SettingsItem
++import com.example.weatherapp.core.ui.component.WeatherBackground
++import com.example.weatherapp.core.ui.theme.spacing
++import com.example.weatherapp.core.ui.theme.weatherColors
++import com.example.weatherapp.core.ui.util.setWeatherBg
++import kotlinx.coroutines.flow.collectLatest
++import org.koin.androidx.compose.koinViewModel
++import java.util.Calendar
++
++@OptIn(ExperimentalMaterial3Api::class)
++@Composable
++fun CitiesScreen(
++    onNavigateToWeather: (String) -> Unit,
++    viewModel: CitiesViewModel = koinViewModel(),
++) {
++    val state by viewModel.state.collectAsStateWithLifecycle()
++    var showBottomSheet by remember { mutableStateOf(false) }
++
++    LaunchedEffect(Unit) {
++        viewModel.effects.collectLatest { effect ->
++            when (effect) {
++                is CitiesEffect.NavigateToWeatherDetails -> {
++                    onNavigateToWeather(effect.cityName)
++                }
++            }
++        }
++    }
++
++    WeatherBackground(
++        background = setWeatherBg(
++            hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY),
++            isRaining = false,
++        ),
++    ) {
++        Column(
++            modifier = Modifier
++                .fillMaxSize()
++                .padding(
++                    top = WindowInsets.statusBars
++                        .asPaddingValues()
++                        .calculateTopPadding(),
++                ),
++        ) {
++            Row(
++                modifier = Modifier
++                    .fillMaxWidth()
++                    .padding(
++                        horizontal = MaterialTheme.spacing.medium,
++                        vertical = MaterialTheme.spacing.small,
++                    ),
++                horizontalArrangement = Arrangement.SpaceBetween,
++                verticalAlignment = Alignment.CenterVertically,
++            ) {
++                Text(
++                    text = stringResource(R.string.cities_title),
++                    style = MaterialTheme.typography.headlineLarge,
++                    color = MaterialTheme.weatherColors.textPrimary,
++                )
++
++                Icon(
++                    painter = painterResource(R.drawable.topbar),
++                    contentDescription = null,
++                    tint = MaterialTheme.weatherColors.textPrimary,
++                    modifier = Modifier
++                        .size(50.dp)
++                        .clickable(
++                            interactionSource = remember { MutableInteractionSource() },
++                            indication = null,
++                        ) { showBottomSheet = true },
++                )
++            }
++
++            LazyColumn(
++                modifier = Modifier.weight(1f),
++                contentPadding = PaddingValues(
++                    horizontal = MaterialTheme.spacing.medium,
++                ),
++                verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
++            ) {
++                items(state.cities) { city ->
++                    CityWeatherCard(
++                        cityName = city.cityName,
++                        subtitle = city.time,
++                        description = city.description,
++                        temperature = city.temp,
++                        tempMin = city.tempMin,
++                        tempMax = city.tempMax,
++                        background = city.background,
++                        onClick = {
++                            viewModel.onAction(
++                                CitiesAction.CitySelected(city.cityName)
++                            )
++                        },
++                    )
++                }
++            }
++
++            SearchBar(
++                query = state.query,
++                onQueryChange = { viewModel.onAction(CitiesAction.InputSearch(it)) },
++                modifier = Modifier
++                    .padding(
++                        start = MaterialTheme.spacing.medium,
++                        end = MaterialTheme.spacing.medium,
++                        top = MaterialTheme.spacing.medium,
++                        bottom = MaterialTheme.spacing.small,
++                    )
++                    .navigationBarsPadding()
++                    .imePadding(),
++            )
++        }
++    }
++
++    if (showBottomSheet) {
++        SettingsBottomSheet(
++            onDismiss = { showBottomSheet = false },
++        )
++    }
++}
++
++@OptIn(ExperimentalMaterial3Api::class)
++@Composable
++private fun SettingsBottomSheet(
++    onDismiss: () -> Unit,
++) {
++    val sheetState = rememberModalBottomSheetState()
++
++    ModalBottomSheet(
++        onDismissRequest = onDismiss,
++        sheetState = sheetState,
++        containerColor = MaterialTheme.weatherColors.backgroundGradientBottom,
++    ) {
++        SettingsItem(
++            iconRes = R.drawable.pencil,
++            title = stringResource(R.string.settings_edit_list),
++            onClick = {}
++        )
++        SettingsItem(
++            iconRes = R.drawable.bell,
++            title = stringResource(R.string.settings_notification),
++            onClick = {}
++        )
++        HorizontalDivider(
++            color = MaterialTheme.weatherColors.textSecondary.copy(alpha = 0.2f),
++            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large),
++        )
++        SettingsItem(
++            iconRes = R.drawable.celsius,
++            title = stringResource(R.string.settings_celsius),
++            onClick = {}
++        )
++        SettingsItem(
++            iconRes = R.drawable.fahrenheit,
++            title = stringResource(R.string.settings_fahrenheit),
++            onClick = {}
++        )
++        HorizontalDivider(
++            color = MaterialTheme.weatherColors.textSecondary.copy(alpha = 0.2f),
++            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large),
++        )
++        SettingsItem(
++            iconRes = R.drawable.colums,
++            title = stringResource(R.string.settings_units),
++            onClick = {}
++        )
++        HorizontalDivider(
++            color = MaterialTheme.weatherColors.textSecondary.copy(alpha = 0.2f),
++            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large),
++        )
++        SettingsItem(
++            iconRes = R.drawable.message,
++            title = stringResource(R.string.settings_report),
++            onClick = {}
++        )
++    }
++}
+Index: core-ui/src/main/res/drawable/tabbar_detail.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/core-ui/src/main/res/drawable/tabbar_detail.xml b/core-ui/src/main/res/drawable/tabbar_detail.xml
+new file mode 100644
+--- /dev/null	(date 1777283182855)
++++ b/core-ui/src/main/res/drawable/tabbar_detail.xml	(date 1777283182855)
+@@ -0,0 +1,38 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:aapt="http://schemas.android.com/aapt"
++    android:width="90dp"
++    android:height="54dp"
++    android:viewportWidth="90"
++    android:viewportHeight="54">
++  <path
++      android:pathData="M27,1L63,1A22,22 0,0 1,85 23L85,23A22,22 0,0 1,63 45L27,45A22,22 0,0 1,5 23L5,23A22,22 0,0 1,27 1z">
++    <aapt:attr name="android:fillColor">
++      <gradient 
++          android:startX="45"
++          android:startY="1"
++          android:endX="45"
++          android:endY="45"
++          android:type="linear">
++        <item android:offset="0" android:color="#000C2741"/>
++        <item android:offset="1" android:color="#840C2741"/>
++      </gradient>
++    </aapt:attr>
++  </path>
++  <path
++      android:strokeWidth="1"
++      android:pathData="M27,0.5L63,0.5A22.5,22.5 0,0 1,85.5 23L85.5,23A22.5,22.5 0,0 1,63 45.5L27,45.5A22.5,22.5 0,0 1,4.5 23L4.5,23A22.5,22.5 0,0 1,27 0.5z"
++      android:strokeAlpha="0.52"
++      android:fillColor="#00000000"
++      android:strokeColor="#ffffff"/>
++  <path
++      android:pathData="M29.078,23.849L29.9,26.997C30.158,27.969 31.158,28.145 31.59,27.408L36.182,19.573C36.658,18.762 35.982,17.934 35.091,18.176L26.33,20.462C25.503,20.678 25.402,21.694 26.266,22.201L29.078,23.849Z"
++      android:fillColor="#FCFCFC"/>
++  <path
++      android:pathData="M46,23m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
++      android:fillColor="#ffffff"
++      android:fillAlpha="0.52"/>
++  <path
++      android:pathData="M60,23m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0"
++      android:fillColor="#ffffff"
++      android:fillAlpha="0.52"/>
++</vector>
+Index: app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesEffect.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesEffect.kt b/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesEffect.kt
+new file mode 100644
+--- /dev/null	(date 1777283182844)
++++ b/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesEffect.kt	(date 1777283182844)
+@@ -0,0 +1,5 @@
++package com.example.weatherapp.presentation.screens.cities
++
++sealed interface CitiesEffect{
++    data class NavigateToWeatherDetails(val cityName: String): CitiesEffect
++}
+\ No newline at end of file
+Index: core-ui/src/main/res/drawable/tabbar_cities.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/core-ui/src/main/res/drawable/tabbar_cities.xml b/core-ui/src/main/res/drawable/tabbar_cities.xml
+new file mode 100644
+--- /dev/null	(date 1777283182855)
++++ b/core-ui/src/main/res/drawable/tabbar_cities.xml	(date 1777283182855)
+@@ -0,0 +1,30 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:aapt="http://schemas.android.com/aapt"
++    android:width="54dp"
++    android:height="54dp"
++    android:viewportWidth="54"
++    android:viewportHeight="54">
++  <path
++      android:pathData="M27,1L27,1A22,22 0,0 1,49 23L49,23A22,22 0,0 1,27 45L27,45A22,22 0,0 1,5 23L5,23A22,22 0,0 1,27 1z">
++    <aapt:attr name="android:fillColor">
++      <gradient 
++          android:startX="27"
++          android:startY="1"
++          android:endX="27"
++          android:endY="45"
++          android:type="linear">
++        <item android:offset="0" android:color="#000C2741"/>
++        <item android:offset="1" android:color="#840C2741"/>
++      </gradient>
++    </aapt:attr>
++  </path>
++  <path
++      android:strokeWidth="1"
++      android:pathData="M27,0.5L27,0.5A22.5,22.5 0,0 1,49.5 23L49.5,23A22.5,22.5 0,0 1,27 45.5L27,45.5A22.5,22.5 0,0 1,4.5 23L4.5,23A22.5,22.5 0,0 1,27 0.5z"
++      android:strokeAlpha="0.52"
++      android:fillColor="#00000000"
++      android:strokeColor="#ffffff"/>
++  <path
++      android:pathData="M18.238,18.412C17.417,18.412 16.753,17.748 16.753,16.928C16.753,16.117 17.417,15.453 18.238,15.453C19.058,15.453 19.722,16.117 19.722,16.928C19.722,17.748 19.058,18.412 18.238,18.412ZM22.974,17.963C22.408,17.963 21.958,17.485 21.958,16.928C21.958,16.361 22.408,15.903 22.974,15.903H36.216C36.792,15.903 37.242,16.361 37.242,16.928C37.242,17.494 36.783,17.963 36.216,17.963H22.974ZM18.238,24.477C17.417,24.477 16.753,23.813 16.753,23.002C16.753,22.182 17.417,21.518 18.238,21.518C19.058,21.518 19.722,22.182 19.722,23.002C19.722,23.813 19.058,24.477 18.238,24.477ZM22.974,24.028C22.408,24.028 21.958,23.549 21.958,23.002C21.958,22.436 22.408,21.967 22.974,21.967H36.216C36.792,21.967 37.242,22.426 37.242,23.002C37.242,23.559 36.783,24.028 36.216,24.028H22.974ZM18.238,30.551C17.417,30.551 16.753,29.877 16.753,29.067C16.753,28.246 17.417,27.582 18.238,27.582C19.058,27.582 19.722,28.246 19.722,29.067C19.722,29.877 19.058,30.551 18.238,30.551ZM22.974,30.102C22.408,30.102 21.958,29.623 21.958,29.067C21.958,28.5 22.408,28.031 22.974,28.031H36.216C36.792,28.031 37.242,28.49 37.242,29.067C37.242,29.623 36.783,30.102 36.216,30.102H22.974Z"
++      android:fillColor="#ffffff"/>
++</vector>
+Index: app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesAction.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesAction.kt b/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesAction.kt
+new file mode 100644
+--- /dev/null	(date 1777283182844)
++++ b/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesAction.kt	(date 1777283182844)
+@@ -0,0 +1,7 @@
++package com.example.weatherapp.presentation.screens.cities
++
++sealed interface CitiesAction {
++    data class CitySelected(val cityName : String) : CitiesAction
++    data class InputSearch(val query: String) : CitiesAction
++    data object Settings : CitiesAction
++}
+\ No newline at end of file
+Index: app/src/main/AndroidManifest.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"utf-8\"?>\r\n<manifest xmlns:android=\"http://schemas.android.com/apk/res/android\"\r\n    xmlns:tools=\"http://schemas.android.com/tools\">\r\n\r\n    <application\r\n        android:allowBackup=\"true\"\r\n        android:dataExtractionRules=\"@xml/data_extraction_rules\"\r\n        android:fullBackupContent=\"@xml/backup_rules\"\r\n        android:icon=\"@mipmap/ic_launcher\"\r\n        android:label=\"@string/app_name\"\r\n        android:roundIcon=\"@mipmap/ic_launcher_round\"\r\n        android:supportsRtl=\"true\"\r\n        android:theme=\"@style/Theme.WeatherApp\">\r\n        <activity\r\n            android:name=\".MainActivity\"\r\n            android:exported=\"true\"\r\n            android:label=\"@string/app_name\"\r\n            android:theme=\"@style/Theme.WeatherApp\">\r\n            <intent-filter>\r\n                <action android:name=\"android.intent.action.MAIN\" />\r\n\r\n                <category android:name=\"android.intent.category.LAUNCHER\" />\r\n            </intent-filter>\r\n        </activity>\r\n    </application>\r\n\r\n</manifest>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+--- a/app/src/main/AndroidManifest.xml	(revision 58e361004a050a577ef0cd8d04bd9a3da8bb9c14)
++++ b/app/src/main/AndroidManifest.xml	(date 1777283182829)
+@@ -15,7 +15,8 @@
+             android:name=".MainActivity"
+             android:exported="true"
+             android:label="@string/app_name"
+-            android:theme="@style/Theme.WeatherApp">
++            android:theme="@style/Theme.WeatherApp"
++            android:windowSoftInputMode="adjustResize">
+             <intent-filter>
+                 <action android:name="android.intent.action.MAIN" />
+ 
+Index: app/src/main/java/com/example/weatherapp/domain/model/CityWeather.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/weatherapp/domain/model/CityWeather.kt b/app/src/main/java/com/example/weatherapp/domain/model/CityWeather.kt
+new file mode 100644
+--- /dev/null	(date 1777283182836)
++++ b/app/src/main/java/com/example/weatherapp/domain/model/CityWeather.kt	(date 1777283182836)
+@@ -0,0 +1,13 @@
++package com.example.weatherapp.domain.model
++
++import com.example.weatherapp.core.ui.util.WeatherBg
++
++data class CityWeather(
++    val cityName:String,
++    val time: String,
++    val temp:Int,
++    val description:String,
++    val tempMin:Int,
++    val tempMax: Int,
++    val background: WeatherBg,
++)
+Index: app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesViewModel.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesViewModel.kt b/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesViewModel.kt
+new file mode 100644
+--- /dev/null	(date 1777283182845)
++++ b/app/src/main/java/com/example/weatherapp/presentation/screens/cities/CitiesViewModel.kt	(date 1777283182845)
+@@ -0,0 +1,59 @@
++package com.example.weatherapp.presentation.screens.cities
++
++import com.example.weatherapp.BaseViewModel
++import com.example.weatherapp.core.ui.util.WeatherBg
++import com.example.weatherapp.domain.model.CityWeather
++
++class CitiesViewModel : BaseViewModel<CitiesUiState, CitiesAction, CitiesEffect>(
++    initialState = CitiesUiState()
++) {
++
++    private val allCities = listOf(
++        CityWeather(
++            cityName = "Алматы",
++            time = "Текущее место",
++            temp = 11,
++            description = "В основном солнечно",
++            tempMin = 5,
++            tempMax = 11,
++            background = WeatherBg.DAY,
++        ),
++        CityWeather(
++            cityName = "Астана",
++            time = "15:58",
++            temp = -10,
++            description = "В основном облачно",
++            tempMin = -22,
++            tempMax = -10,
++            background = WeatherBg.DAY_RAIN,
++        ),
++    )
++
++    init {
++        updateState { copy(cities = allCities) }
++    }
++
++    override fun onAction(action: CitiesAction) {
++        when (action) {
++            is CitiesAction.CitySelected -> sendEffect(
++                CitiesEffect.NavigateToWeatherDetails(action.cityName)
++            )
++            is CitiesAction.InputSearch -> {
++                updateState { copy(query = action.query) }
++                filterCities(action.query)
++            }
++            CitiesAction.Settings -> { }
++        }
++    }
++
++    private fun filterCities(query: String) {
++        val filtered = if (query.isBlank()) {
++            allCities
++        } else {
++            allCities.filter {
++                it.cityName.contains(query, ignoreCase = true)
++            }
++        }
++        updateState { copy(cities = filtered) }
++    }
++}
+\ No newline at end of file
+Index: core-ui/src/main/res/drawable/topbar.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/core-ui/src/main/res/drawable/topbar.xml b/core-ui/src/main/res/drawable/topbar.xml
+new file mode 100644
+--- /dev/null	(date 1777283182859)
++++ b/core-ui/src/main/res/drawable/topbar.xml	(date 1777283182859)
+@@ -0,0 +1,30 @@
++<vector xmlns:android="http://schemas.android.com/apk/res/android"
++    xmlns:aapt="http://schemas.android.com/aapt"
++    android:width="54dp"
++    android:height="54dp"
++    android:viewportWidth="54"
++    android:viewportHeight="54">
++  <path
++      android:pathData="M27,1L27,1A22,22 0,0 1,49 23L49,23A22,22 0,0 1,27 45L27,45A22,22 0,0 1,5 23L5,23A22,22 0,0 1,27 1z">
++    <aapt:attr name="android:fillColor">
++      <gradient 
++          android:startX="27"
++          android:startY="1"
++          android:endX="27"
++          android:endY="45"
++          android:type="linear">
++        <item android:offset="0" android:color="#000C2741"/>
++        <item android:offset="1" android:color="#840C2741"/>
++      </gradient>
++    </aapt:attr>
++  </path>
++  <path
++      android:strokeWidth="1"
++      android:pathData="M27,0.5L27,0.5A22.5,22.5 0,0 1,49.5 23L49.5,23A22.5,22.5 0,0 1,27 45.5L27,45.5A22.5,22.5 0,0 1,4.5 23L4.5,23A22.5,22.5 0,0 1,27 0.5z"
++      android:strokeAlpha="0.52"
++      android:fillColor="#00000000"
++      android:strokeColor="#ffffff"/>
++  <path
++      android:pathData="M18.47,25.311C18.036,25.311 17.644,25.208 17.294,25.003C16.944,24.79 16.666,24.508 16.46,24.158C16.255,23.808 16.152,23.423 16.152,23.005C16.152,22.579 16.255,22.19 16.46,21.84C16.666,21.49 16.944,21.212 17.294,21.007C17.644,20.794 18.036,20.687 18.47,20.687C18.888,20.687 19.273,20.794 19.623,21.007C19.973,21.212 20.251,21.49 20.456,21.84C20.662,22.19 20.764,22.579 20.764,23.005C20.764,23.423 20.662,23.808 20.456,24.158C20.251,24.508 19.973,24.79 19.623,25.003C19.273,25.208 18.888,25.311 18.47,25.311ZM26.999,25.311C26.572,25.311 26.184,25.208 25.834,25.003C25.484,24.79 25.202,24.508 24.989,24.158C24.784,23.808 24.681,23.423 24.681,23.005C24.681,22.579 24.784,22.19 24.989,21.84C25.202,21.49 25.484,21.212 25.834,21.007C26.184,20.794 26.572,20.687 26.999,20.687C27.425,20.687 27.809,20.794 28.152,21.007C28.502,21.212 28.78,21.49 28.985,21.84C29.198,22.19 29.305,22.579 29.305,23.005C29.305,23.423 29.198,23.808 28.985,24.158C28.78,24.508 28.502,24.79 28.152,25.003C27.809,25.208 27.425,25.311 26.999,25.311ZM35.527,25.311C35.101,25.311 34.713,25.208 34.363,25.003C34.013,24.79 33.735,24.508 33.529,24.158C33.324,23.808 33.221,23.423 33.221,23.005C33.221,22.579 33.324,22.19 33.529,21.84C33.735,21.49 34.013,21.212 34.363,21.007C34.713,20.794 35.101,20.687 35.527,20.687C35.954,20.687 36.342,20.794 36.692,21.007C37.042,21.212 37.32,21.49 37.526,21.84C37.739,22.19 37.845,22.579 37.845,23.005C37.845,23.423 37.739,23.808 37.526,24.158C37.32,24.508 37.042,24.79 36.692,25.003C36.342,25.208 35.954,25.311 35.527,25.311Z"
++      android:fillColor="#ffffff"/>
++</vector>
